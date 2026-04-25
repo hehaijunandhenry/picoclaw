@@ -65,7 +65,8 @@ export interface ChatStoreState {
 
 type ChatStorePatch = Partial<ChatStoreState>
 
-const SHOW_THOUGHTS_STORAGE_KEY = "picoclaw:chat-show-thoughts"
+// Keep the legacy storage value so existing user preferences survive the rename.
+const SHOW_ASSISTANT_DETAILS_STORAGE_KEY = "picoclaw:chat-show-thoughts"
 
 const DEFAULT_CHAT_STATE: ChatStoreState = {
   messages: [],
@@ -76,8 +77,8 @@ const DEFAULT_CHAT_STATE: ChatStoreState = {
 }
 
 export const chatAtom = atom<ChatStoreState>(DEFAULT_CHAT_STATE)
-export const showThoughtsAtom = atomWithStorage<boolean>(
-  SHOW_THOUGHTS_STORAGE_KEY,
+export const showAssistantDetailsAtom = atomWithStorage<boolean>(
+  SHOW_ASSISTANT_DETAILS_STORAGE_KEY,
   true,
 )
 

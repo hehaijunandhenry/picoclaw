@@ -23,7 +23,7 @@ import { usePicoChat } from "@/hooks/use-pico-chat"
 import { useSessionHistory } from "@/hooks/use-session-history"
 import type { ConnectionState } from "@/store/chat"
 import type { ChatAttachment } from "@/store/chat"
-import { showThoughtsAtom } from "@/store/chat"
+import { showAssistantDetailsAtom } from "@/store/chat"
 import type { GatewayState } from "@/store/gateway"
 
 const MAX_IMAGE_SIZE_BYTES = 7 * 1024 * 1024
@@ -112,7 +112,9 @@ export function ChatPage() {
   const [hasScrolled, setHasScrolled] = useState(false)
   const [input, setInput] = useState("")
   const [attachments, setAttachments] = useState<ChatAttachment[]>([])
-  const [showThoughts, setShowThoughts] = useAtom(showThoughtsAtom)
+  const [showAssistantDetails, setShowAssistantDetails] = useAtom(
+    showAssistantDetailsAtom,
+  )
 
   const {
     messages,
@@ -271,12 +273,12 @@ export function ChatPage() {
       >
         <div className="border-border/60 hidden items-center gap-2 rounded-lg border px-3 py-1.5 sm:flex">
           <span className="text-muted-foreground text-sm">
-            {t("chat.showThoughts")}
+            {t("chat.showAssistantDetails")}
           </span>
           <Switch
-            checked={showThoughts}
-            onCheckedChange={setShowThoughts}
-            aria-label={t("chat.showThoughts")}
+            checked={showAssistantDetails}
+            onCheckedChange={setShowAssistantDetails}
+            aria-label={t("chat.showAssistantDetails")}
             size="sm"
           />
         </div>
@@ -323,7 +325,10 @@ export function ChatPage() {
           )}
 
           {messages.map((msg) => {
-            if (msg.kind === "thought" && !showThoughts) {
+            if (
+              !showAssistantDetails &&
+              (msg.kind === "thought" || msg.kind === "tool_calls")
+            ) {
               return null
             }
 
