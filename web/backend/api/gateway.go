@@ -915,6 +915,11 @@ func (h *Handler) startGatewayLocked(initialStatus string, existingPid int) (int
 	// Already holding gateway.mu from caller.
 	if changed {
 		refreshPicoTokensLocked(h.configPath)
+		cfg, err = config.LoadConfig(h.configPath)
+		if err != nil {
+			return 0, fmt.Errorf("failed to reload config after ensuring pico channel: %w", err)
+		}
+		defaultModelName = strings.TrimSpace(cfg.Agents.Defaults.GetModelName())
 	}
 
 	if err := cmd.Start(); err != nil {

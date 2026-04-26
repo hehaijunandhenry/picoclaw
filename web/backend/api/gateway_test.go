@@ -286,6 +286,61 @@ func TestStartGatewayLocked_ForwardsWildcardHostForPublicLauncher(t *testing.T) 
 	}
 }
 
+func TestStartGatewayLocked_UsesReloadedConfigForBootSignature(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("sleep command differs on Windows")
+	}
+
+	resetGatewayTestState(t)
+
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	cfg := config.DefaultConfig()
+	delete(cfg.Channels, "pico")
+	if err := config.SaveConfig(configPath, cfg); err != nil {
+		t.Fatalf("SaveConfig() error = %v", err)
+	}
+
+	h := NewHandler(configPath)
+	h.SetServerOptions(18800, false, false, nil)
+	gatewayExecCommand = func(_ string, _ ...string) *exec.Cmd {
+		return exec.Command("sleep", "30")
+	}
+
+	originalSignature := computeConfigSignature(cfg)
+	pid, err := h.startGatewayLocked("starting", 0)
+	if err != nil {
+		t.Fatalf("startGatewayLocked() error = %v", err)
+	}
+	if pid <= 0 {
+		t.Fatalf("startGatewayLocked() pid = %d, want > 0", pid)
+	}
+
+	gateway.mu.Lock()
+	cmd := gateway.cmd
+	bootSignature := gateway.bootConfigSignature
+	gateway.mu.Unlock()
+	t.Cleanup(func() {
+		if cmd != nil && cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		if cmd != nil {
+			_ = cmd.Wait()
+		}
+	})
+
+	updatedCfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v", err)
+	}
+	expectedSignature := computeConfigSignature(updatedCfg)
+	if expectedSignature == originalSignature {
+		t.Fatal("expected EnsurePicoChannel() to change the config signature during gateway start")
+	}
+	if bootSignature != expectedSignature {
+		t.Fatalf("bootConfigSignature = %q, want %q", bootSignature, expectedSignature)
+	}
+}
+
 func TestGatewayStartReady_NoDefaultModel(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	h := NewHandler(configPath)
